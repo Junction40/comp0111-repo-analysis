@@ -22,10 +22,10 @@ results_filename = "results/results_{}.csv".format(analysed_repository.split("/"
 header = [
     "repo",  # Repo Name
     "pr_ID",  # Pull Request ID
+    "suggestion",  # Was the comment a suggestion?
     "bassist_comment",  # Was the comment created by B-Assist?
     "comment_text",  # Regular text in comment
     "comment_code",  # Suggested code in comment
-    "suggestion",  # Was the comment a suggestion?
     "action",  # How did the reviewer react to the comment? (Accept, Reject, Ignore)
     "response_time",  # How much time elapsed between when the comment was created and when the reviewer reacted to it.
 ]
@@ -33,12 +33,14 @@ header = [
 
 def check_bassist(comment):
     # Check if B-Assist created the comment
-    return False
+    return (
+        comment.user.login == "B-Assist"
+    )  # TODO: Update based on final decided username
 
 
 def check_is_suggestion(comment):
     # Check if the review comment is a suggestion
-    return False
+    return SUGGEST_START in comment.body
 
 
 def extract_code_and_body(comment, suggestion):
@@ -46,10 +48,37 @@ def extract_code_and_body(comment, suggestion):
 
     # If there is a suggestion, there should be code.
     if suggestion == True:
-        return "**Comment Text**", "**Code**"
+        # Starting index of code suggestion (including "```suggestion")
+        start = comment.body.index(SUGGEST_START)
+
+        # Ending index of code suggestion (search starting after found snippet start index, including "```")
+        end = comment.body.index(SUGGEST_END, start + len(SUGGEST_START)) + len(
+            SUGGEST_END
+        )
+
+        # Suggestion code snippet (including suggestion prefix and suffix)
+        snippet = comment.body[start:end]
+
+        # Formatted code snippet with the suggestion prefix and suffix removed
+        formatted_snippet = (
+            snippet[len(SUGGEST_START) : end - len(SUGGEST_END)]
+            .strip()
+            .replace("\r", "")
+            .encode("utf-8")
+        )
+
+        # Remove the code snippet from the original comment to leave only the regular text
+        comment_text = (
+            comment.body.replace(snippet, " - CODE - ")
+            .replace("\r", "")
+            .replace("\n", "")
+            .encode("utf-8")
+        )
+
+        return comment_text, formatted_snippet
     # If no suggestion, return the comment body and "No Code".
     else:
-        return "**Comment Text**", "No Code"
+        return comment.body.encode("utf-8"), "No Code"
 
 
 def check_comment_action(comment, pr):
@@ -90,9 +119,9 @@ def main():
             print("Reading Comment")
 
             # Run analysis methods
-            bassist_comment = check_bassist(comment)
             is_suggestion = check_is_suggestion(comment)
-            comment_code, comment_text = extract_code_and_body(comment, is_suggestion)
+            bassist_comment = check_bassist(comment)
+            comment_text, comment_code = extract_code_and_body(comment, is_suggestion)
             comment_action = check_comment_action(comment, pr)
             reaction_time = "No Reaction"
             if comment_action != "ignored":
@@ -102,10 +131,10 @@ def main():
             row = [
                 pr.base.repo.full_name.encode("utf-8"),  # Repo name
                 pr.number,  # PR ID
+                is_suggestion,  # Change to check if the comment is a suggestion
                 bassist_comment,  # Change to check if B-Assist created the comment
                 comment_text,  # Text in comment
                 comment_code,  # Suggested code in comment
-                is_suggestion,  # Change to check if the comment is a suggestion
                 comment_action,  # Change to check if the comment was accepted/rejected/ignored
                 reaction_time,  # Change to calculation of response time
             ]
