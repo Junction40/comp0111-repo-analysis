@@ -28,6 +28,8 @@ header = [
     "comment_code",  # Suggested code in comment
     "action",  # How did the reviewer react to the comment? (Accept, Reject, Ignore)
     "response_time",  # How much time elapsed between when the comment was created and when the reviewer reacted to it.
+    # if the pr closed with the changes the pr is ignored
+    # while pr is still opeen and hcanges haven been implented yet they're in the "unknown/waiting" phase
 ]
 
 
@@ -80,9 +82,18 @@ def extract_code_and_body(comment, suggestion):
     else:
         return comment.body.encode("utf-8"), "No Code"
 
-
 def check_comment_action(comment, pr):
     # Check if the comment was accepted/rejected/ignored
+    # print(comment.body)
+    
+    if pr.commits > 1:
+        for commit in pr.get_commits():
+            if (
+                comment.path in [f.filename for f in commit.files]
+                and commit.commit.committer.date > comment.created_at
+            ):
+                print(comment.path)
+                return "accepted"
     return "ignored"
 
 
@@ -116,7 +127,7 @@ def main():
     # Get all comments from all pull requests
     for pr in pull_requests:
         for comment in pr.get_comments():
-            print("Reading Comment")
+            # print("Reading Comment")
 
             # Run analysis methods
             is_suggestion = check_is_suggestion(comment)
