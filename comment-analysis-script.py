@@ -12,6 +12,10 @@ import datetime
 # Import config.py
 import config
 
+# TODO 
+# If the pr closed with the changes the pr is ignored
+# While pr is still open and changes haven't been implemented yet, they're in the "unknown/waiting" phase
+
 # *CHANGE VALUE TO NAME OF REPOSITORY TO ANALYSE*
 analysed_repository = "PyGithub/PyGithub"
 
@@ -28,8 +32,7 @@ header = [
     "comment_code",  # Suggested code in comment
     "action",  # How did the reviewer react to the comment? (Accept, Reject, Ignore)
     "response_time",  # How much time elapsed between when the comment was created and when the reviewer reacted to it.
-    # if the pr closed with the changes the pr is ignored
-    # while pr is still opeen and hcanges haven been implented yet they're in the "unknown/waiting" phase
+    "url" # URL to comment
 ]
 
 
@@ -92,14 +95,9 @@ def check_comment_action(comment, pr):
                 comment.path in [f.filename for f in commit.files]
                 and commit.commit.committer.date > comment.created_at
             ):
-                print(comment.path)
-                return "accepted"
-    return "ignored"
-
-
-def check_reaction_time(comment):
-    # If the comment was accepted or rejected, return the time of reaction - the time the comment was created
-    return datetime.datetime.now()
+                # print(comment.path)
+                return commit
+    return "Ignored/Rejected"
 
 
 def main():
@@ -133,10 +131,17 @@ def main():
             is_suggestion = check_is_suggestion(comment)
             bassist_comment = check_bassist(comment)
             comment_text, comment_code = extract_code_and_body(comment, is_suggestion)
-            comment_action = check_comment_action(comment, pr)
+            comment_action = "-"
             reaction_time = "No Reaction"
-            if comment_action != "ignored":
-                reaction_time = check_reaction_time(comment)
+            if is_suggestion and comment_action != "Ignored/Rejected" and "-":
+                comment_action = check_comment_action(comment, pr)
+                # If the comment is a suggestion and accepted, check reaction time from comment creation to commit in total seconds
+                if comment_action != "Ignored/Rejected" and "-":
+                    reaction_time = (comment_action.commit.committer.date - comment.created_at).total_seconds()
+                    print(comment)
+                    print(reaction_time)
+                    # Since there is a commit object, just make it accepted for the csv
+                    comment_action = "Accepted"
 
             # Create row to be added to CSV file
             row = [
@@ -148,6 +153,7 @@ def main():
                 comment_code,  # Suggested code in comment
                 comment_action,  # Change to check if the comment was accepted/rejected/ignored
                 reaction_time,  # Change to calculation of response time
+                comment.html_url # Comment URL
             ]
             with open(results_filename, "a") as f:
                 writer = csv.writer(f, delimiter=",")
