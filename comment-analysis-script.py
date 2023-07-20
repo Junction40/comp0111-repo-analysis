@@ -10,17 +10,16 @@ import csv
 import datetime
 
 # Import config.py
-import config
+import credentials, config
 
-# TODO 
+# TODO
 # If the pr closed with the changes the pr is ignored
 # While pr is still open and changes haven't been implemented yet, they're in the "unknown/waiting" phase
 
-# *CHANGE VALUE TO NAME OF REPOSITORY TO ANALYSE*
-analysed_repository = "PyGithub/PyGithub"
-
 # Filename to store analysis results
-results_filename = "results/results_{}.csv".format(analysed_repository.split("/")[1])
+results_filename = "results/results_{}.csv".format(
+    config.analysed_repository.split("/")[1]
+)
 
 # Header for CSV results file
 header = [
@@ -32,7 +31,7 @@ header = [
     "comment_code",  # Suggested code in comment
     "action",  # How did the reviewer react to the comment? (Accept, Reject, Ignore)
     "response_time",  # How much time elapsed between when the comment was created and when the reviewer reacted to it.
-    "url" # URL to comment
+    "url",  # URL to comment
 ]
 
 
@@ -85,17 +84,15 @@ def extract_code_and_body(comment, suggestion):
     else:
         return comment.body.encode("utf-8"), "No Code"
 
+
 def check_comment_action(comment, pr):
     # Check if the comment was accepted/rejected/ignored
-    # print(comment.body)
-    
     if pr.commits > 1:
         for commit in pr.get_commits():
             if (
                 comment.path in [f.filename for f in commit.files]
                 and commit.commit.committer.date > comment.created_at
             ):
-                # print(comment.path)
                 return commit
     return "Ignored/Rejected"
 
@@ -107,17 +104,17 @@ def main():
         writer.writerow(header)
 
     # Define auth using access token from config.py
-    auth = Auth.Token(config.github_access_token)
+    auth = Auth.Token(credentials.github_access_token)
 
-    # Define Github object
-    g = Github(auth=auth)
-
-    # # ** Uncomment the following 2 lines and comment the 2 lines above when testing on BBGithub. **
-    # # Define Github Enterprise object
-    # g = Github(auth=auth, base_url="https://{hostname}/api/v3")
+    if config.github_enterprise_repo:
+        g = Github(
+            auth=auth, base_url=("{}/api/v3".format(config.github_enterprise_hostname))
+        )
+    else:
+        g = Github(auth=auth)
 
     # Fetch specific repository
-    repo = g.get_repo(analysed_repository)
+    repo = g.get_repo(config.analysed_repository)
 
     # Get pull requests
     pull_requests = repo.get_pulls()
@@ -125,8 +122,6 @@ def main():
     # Get all comments from all pull requests
     for pr in pull_requests:
         for comment in pr.get_comments():
-            # print("Reading Comment")
-
             # Run analysis methods
             is_suggestion = check_is_suggestion(comment)
             bassist_comment = check_bassist(comment)
@@ -137,9 +132,9 @@ def main():
                 comment_action = check_comment_action(comment, pr)
                 # If the comment is a suggestion and accepted, check reaction time from comment creation to commit in total seconds
                 if comment_action != "Ignored/Rejected" and "-":
-                    reaction_time = (comment_action.commit.committer.date - comment.created_at).total_seconds()
-                    print(comment)
-                    print(reaction_time)
+                    reaction_time = (
+                        comment_action.commit.committer.date - comment.created_at
+                    ).total_seconds()
                     # Since there is a commit object, just make it accepted for the csv
                     comment_action = "Accepted"
 
@@ -153,7 +148,7 @@ def main():
                 comment_code,  # Suggested code in comment
                 comment_action,  # Change to check if the comment was accepted/rejected/ignored
                 reaction_time,  # Change to calculation of response time
-                comment.html_url # Comment URL
+                comment.html_url,  # Comment URL
             ]
             with open(results_filename, "a") as f:
                 writer = csv.writer(f, delimiter=",")
