@@ -38,7 +38,7 @@ header = [
 def check_bassist(comment):
     # Check if B-Assist created the comment
     return (
-        comment.user.login == "B-Assist"
+        comment.user.login == "fixie"
     )  # TODO: Update based on final decided username
 
 
@@ -93,8 +93,11 @@ def check_comment_action(comment, pr):
                 comment.path in [f.filename for f in commit.files]
                 and commit.commit.committer.date > comment.created_at
             ):
-                return commit
-    return "Ignored/Rejected"
+                reaction_time = (
+                    commit.commit.committer.date - comment.created_at
+                ).total_seconds()
+                return "Accepted", reaction_time
+    return "Ignored/Rejected", "No Reaction"
 
 
 def main():
@@ -107,8 +110,9 @@ def main():
     auth = Auth.Token(credentials.github_access_token)
 
     if config.github_enterprise_repo:
+        hostname = config.github_enterprise_hostname + "api/v3"
         g = Github(
-            auth=auth, base_url=("{}/api/v3".format(config.github_enterprise_hostname))
+            auth=auth, base_url=hostname
         )
     else:
         g = Github(auth=auth)
@@ -117,26 +121,22 @@ def main():
     repo = g.get_repo(config.analysed_repository)
 
     # Get pull requests
-    pull_requests = repo.get_pulls()
+    pull_requests = repo.get_pulls(state="all")
 
     # Get all comments from all pull requests
     for pr in pull_requests:
         for comment in pr.get_comments():
+            print("Reading Comment")
+
             # Run analysis methods
             is_suggestion = check_is_suggestion(comment)
             bassist_comment = check_bassist(comment)
             comment_text, comment_code = extract_code_and_body(comment, is_suggestion)
             comment_action = "-"
             reaction_time = "No Reaction"
-            if is_suggestion and comment_action != "Ignored/Rejected" and "-":
-                comment_action = check_comment_action(comment, pr)
-                # If the comment is a suggestion and accepted, check reaction time from comment creation to commit in total seconds
-                if comment_action != "Ignored/Rejected" and "-":
-                    reaction_time = (
-                        comment_action.commit.committer.date - comment.created_at
-                    ).total_seconds()
-                    # Since there is a commit object, just make it accepted for the csv
-                    comment_action = "Accepted"
+
+            if is_suggestion:
+                comment_action, reaction_time = check_comment_action(comment, pr)
 
             # Create row to be added to CSV file
             row = [
