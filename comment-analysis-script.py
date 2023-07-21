@@ -16,8 +16,6 @@ import credentials, config
 # If the pr closed with the changes the pr is ignored
 # While pr is still open and changes haven't been implemented yet, they're in the "unknown/waiting" phase
 
-# TODO Figure out how to sort comments from newest to oldest in a PR correctly, and then we can change the continue to a break in the for loop check
-
 # Filename to store analysis results
 results_filename = "results/results_{}.csv".format(
     config.analysed_repository.split("/")[1]
@@ -130,12 +128,15 @@ def main():
 
     # Get all comments from all pull requests
     for pr in pull_requests:
-        for comment in pr.get_comments():
+        for comment in pr.get_comments(sort='created', direction='desc'):
             print("Reading Comment")
             
+            # Check if the current comment is older than the selected filter date
             if comment.created_at < comment_filter_date:
                 print("Comment Skipped - Too Old")
-                continue
+                # Since comments are sorted chronologically for each PR, the first out of date comment 
+                # for a PR means all following comments for that PR will also be out of date. Thus, we can use break.
+                break
 
             # Run analysis methods
             is_suggestion = check_is_suggestion(comment)
