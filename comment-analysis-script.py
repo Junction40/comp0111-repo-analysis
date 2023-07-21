@@ -27,6 +27,7 @@ results_filename = "results/results_{}.csv".format(
 header = [
     "repo",  # Repo Name
     "pr_ID",  # Pull Request ID
+    "creation_date", # Comment creation date
     "suggestion",  # Was the comment a suggestion?
     "bassist_comment",  # Was the comment created by B-Assist?
     "comment_text",  # Regular text in comment
@@ -150,6 +151,7 @@ def main():
             row = [
                 pr.base.repo.full_name.encode("utf-8"),  # Repo name
                 pr.number,  # PR ID
+                comment.created_at, # Comment creation date
                 is_suggestion,  # Change to check if the comment is a suggestion
                 bassist_comment,  # Change to check if B-Assist created the comment
                 comment_text,  # Text in comment
