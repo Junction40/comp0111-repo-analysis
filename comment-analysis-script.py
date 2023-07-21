@@ -7,7 +7,7 @@ SUGGEST_END = "```"
 
 # Import CSV Package
 import csv
-import datetime
+from datetime import datetime
 
 # Import config.py
 import credentials, config
@@ -15,6 +15,8 @@ import credentials, config
 # TODO
 # If the pr closed with the changes the pr is ignored
 # While pr is still open and changes haven't been implemented yet, they're in the "unknown/waiting" phase
+
+# TODO Figure out how to sort comments from newest to oldest in a PR correctly, and then we can change the continue to a break in the for loop check
 
 # Filename to store analysis results
 results_filename = "results/results_{}.csv".format(
@@ -123,10 +125,16 @@ def main():
     # Get pull requests
     pull_requests = repo.get_pulls(state="all")
 
+    comment_filter_date = datetime.strptime(config.filter_date, '%d/%m/%Y')
+
     # Get all comments from all pull requests
     for pr in pull_requests:
         for comment in pr.get_comments():
             print("Reading Comment")
+            
+            if comment.created_at < comment_filter_date:
+                print("Comment Skipped - Too Old")
+                continue
 
             # Run analysis methods
             is_suggestion = check_is_suggestion(comment)

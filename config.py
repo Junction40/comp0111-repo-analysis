@@ -4,3 +4,6 @@ github_enterprise_hostname = ""
 
 # Insert the name of the repository you want to analyse, in the format of "*USER_NAME*/*REPO_NAME*", e.g. "PyGithub/PyGithub"
 analysed_repository = "PyGithub/PyGithub"
+
+# Insert the date from which you want to start reading comments
+filter_date = "01/01/2000"
