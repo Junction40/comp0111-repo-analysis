@@ -1,8 +1,9 @@
 # Import PyGithub
 from github import Github
 from github import Auth
+import urllib
 
-SUGGEST_START = "```suggestion"
+SUGGEST_START = "```suggestion" # "```suggestion\r\n"
 SUGGEST_END = "```"
 
 # Import CSV Package
@@ -66,7 +67,7 @@ def extract_code_and_body(comment, suggestion):
 
         # Formatted code snippet with the suggestion prefix and suffix removed
         formatted_snippet = (
-            snippet[len(SUGGEST_START) : end - len(SUGGEST_END)]
+            snippet[len(SUGGEST_START) : -len(SUGGEST_END)]
             .strip()
             .replace("\r", "")
             .encode("utf-8")
@@ -85,19 +86,40 @@ def extract_code_and_body(comment, suggestion):
     else:
         return comment.body.encode("utf-8"), "No Code"
 
+def _wget(link):
+    try:
+        src = urllib.request.urlopen(link).read()
+        # print(src)
+    except urllib.error.HTTPError:
+        print("ERROR: ", link)
+        return ""
+    return src
 
-def check_comment_action(comment, pr):
+def check_comment_action(comment, pr, comment_code):
     # Check if the comment was accepted/rejected/ignored
     if pr.commits > 1:
         for commit in pr.get_commits():
+            # Check if the comment is within a file of the commited files and the corresponding commit date is newer than the comment creation date
             if (
                 comment.path in [f.filename for f in commit.files]
                 and commit.commit.committer.date > comment.created_at
             ):
-                reaction_time = (
+                file_url = (
+                    commit.html_url.replace(
+                        "github.com", "raw.githubusercontent.com"
+                    ).replace("commit/", "")
+                    + "/"
+                    + comment.path
+                )
+
+                src = _wget(file_url)
+                
+                # Decode both bytes to compare as a string and check if the code snippet is within the commit's corresponding file
+                if comment_code.decode("utf-8") in src.decode("utf-8"):
+                    reaction_time = (
                     commit.commit.committer.date - comment.created_at
-                ).total_seconds()
-                return "Accepted", reaction_time
+                    ).total_seconds()
+                    return "Accepted", reaction_time
     return "Ignored/Rejected", "No Reaction"
 
 
@@ -146,7 +168,7 @@ def main():
             reaction_time = "No Reaction"
 
             if is_suggestion:
-                comment_action, reaction_time = check_comment_action(comment, pr)
+                comment_action, reaction_time = check_comment_action(comment, pr, comment_code)
 
             # Create row to be added to CSV file
             row = [

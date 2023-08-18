@@ -1,0 +1,4 @@
+repo,pr_ID,creation_date,suggestion,bassist_comment,comment_text,comment_code,action,response_time,url
+b'davejjwilliams/repository-analysis-mock',1,2023-08-18 13:46:16,False,False,b'Because this is the sq function. What did you expect?',No Code,-,No Reaction,https://github.com/davejjwilliams/repository-analysis-mock/pull/1#discussion_r1298473158
+b'davejjwilliams/repository-analysis-mock',1,2023-08-18 13:45:41,True,False,b'Why are you returning square? - CODE - ',b'return num * num * num',Ignored/Rejected,No Reaction,https://github.com/davejjwilliams/repository-analysis-mock/pull/1#discussion_r1298472536
+b'davejjwilliams/repository-analysis-mock',1,2023-08-18 13:35:13,True,False,b'You called the wrong function in this line! - CODE - Hope this helps!',"b'print(""{} miles is {} kilometres"".format(num, miles_to_km(num)))'",Accepted,1859.0,https://github.com/davejjwilliams/repository-analysis-mock/pull/1#discussion_r1298461092
