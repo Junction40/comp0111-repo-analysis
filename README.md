@@ -22,23 +22,23 @@ Before running the script, you need to decide which repository you want to analy
 
 ## Public GitHub Repositories
 
-For this example, we will use the PyGithub Repository. This repository is hosted on public GitHub.
+For this example, we will use the mock repository we created to test the script. This repository is hosted on public GitHub.
 
 1. Navigate to the `config.py` file in the repository.
 
 2. Ensure the `github_enterprise_repo` variable is set to `False`. The `github_enterprise_hostname` variable will not be used in this case, and thus can be set to any value (e.g. `""`).
 
-3. Set the `analysed-repository` value to the repository you want to analyse in the format of `"*USER_NAME*/*REPO_NAME*"`. For the example described at the beginning of this section, this value would be `"PyGithub/PyGithub"`.
+3. Set the `analysed-repository` value to the repository you want to analyse in the format of `"*USER_NAME*/*REPO_NAME*"`. For the example described at the beginning of this section, this value would be `"davejjwilliams/repository-analysis-mock"`.
 
 4. Set the `filter_date` variable to the date from which you want to save comments onwards. If you want to keep all comments, you can simply choose a reasonably old date that will encompass all commits since the beginning of the repository (e.g. 30 years ago). PLEASE NOTE: the format of the date is European with 4-digit year, e.g. 25/12/2000.
 
-5. In the `results` directory, create a file named `results_*REPO_NAME*.csv` with only the name of the repo you wish to analyse. For the example above, this would be `results_PyGithub.csv`.
+5. In the `results` directory, create a file named `results_*REPO_NAME*.csv` with only the name of the repo you wish to analyse. For the example above, this would be `results_repository-analysis-mock.csv`.
 
 6. You can now run the `comment-analysis-script.py` to see your results.
 
 ## Enterprise GitHub Repositories
 
-For repositories hosted on an GitHub enterprise with a custom hostname, there is a slightly different process including an additional step compared to public repositories.
+For repositories hosted on a GitHub enterprise with a custom hostname, there is a slightly different process including an additional step compared to public repositories.
 
 1. Navigate to the `config.py` file in the repository.
 
@@ -46,4 +46,8 @@ For repositories hosted on an GitHub enterprise with a custom hostname, there is
 
 3. Ensure the `github_enterprise_hostname` variable is set to the hostname of your company's GitHub Enterprise (e.g. `"https://{hostname}"`)
 
-4. You have now completed all enterprise-specific steps. Follow steps 3-6 of the [Public GitHub Repositories](#public-github-repositories) section to get the script running!
+4. You have now completed all the enterprise-specific steps. Follow steps 3-6 of the [Public GitHub Repositories](#public-github-repositories) section to get the script running!
+
+# Testing
+
+Testing on this script has been conducted using the [davejjwilliams/repository-analysis-mock](https://github.com/davejjwilliams/repository-analysis-mock) repository. To ensure the script is functioning correctly, please follow the example described in the [Public GitHub Repositories](#public-github-repositories) section and check the output in your CSV file matches the mock repository's README.
