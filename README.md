@@ -1,6 +1,19 @@
 # Repository Comment Analyser
 
-This script has been created to analyse repositories where a GitHub comment creation tool will be used.
+This script has been created to analyse repositories where B-Assist will be used. It collects multiple pieces of data for each review comment made on a given repository.
+
+For each comment, the script collects the following information and stores it in a CSV row:
+
+- **repo**: The name of the repository where the comment was posted.
+- **pr_ID**: The ID of the pull request to which the comment was posted.
+- **creation_date**: The comment creation datetime.
+- **suggestion**: Bool - Whether the comment contained a suggested change.
+- **bassist_comment**: Bool - Whether the comment was created by B-Assist.
+- **comment_text**: The extracted normal text from the comment.
+- **comment_code**: The extracted code snippet from the comment (if any).
+- **action**: The response to the comment. This field is determined by whether the code snippet from the comment appears in any of the commits made after the comment was posted in the pull request. This will either be "-" if the comment is not a suggestion, "Accepted" if the snippet is found in the later commits, and "Rejected/Ignored" otherwise.
+- **response_time**: If the suggestion was accepted, this value is calculated as the time between the commit where the suggestion snippet appeared and when the comment was posted. Otherwise, it is "No Reaction".
+- **url**: URL to access the comment directly.
 
 # Setup & Authentication
 
